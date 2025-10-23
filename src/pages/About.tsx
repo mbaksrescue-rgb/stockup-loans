@@ -9,14 +9,12 @@ const About = () => {
     {
       name: "Omar Laisa",
       role: "Director",
-      image: omarImage,
-      order: "1st"
+      image: omarImage
     },
     {
       name: "Jackson Onyago",
       role: "Director",
-      image: jacksonImage,
-      order: "2nd"
+      image: jacksonImage
     }
   ];
 
@@ -55,11 +53,10 @@ const About = () => {
                     />
                   </div>
                   <div className="p-6 text-center">
-                    <p className="text-sm text-accent font-semibold mb-1">{director.order} Director</p>
                     <h3 className="text-2xl font-bold text-primary-foreground mb-2">
                       {director.name}
                     </h3>
-                    <p className="text-primary-foreground/80">{director.role}</p>
+                    <p className="text-accent font-semibold">{director.role}</p>
                   </div>
                 </Card>
               ))}
