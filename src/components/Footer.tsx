@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/zion-link-logo.jpg";
 
 const Footer = () => {
   return (
@@ -9,14 +10,22 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">
-              Stock <span className="text-accent">24/7</span>
-            </h3>
-            <p className="text-sm text-primary-foreground/80 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="Zion Link Technologies" className="h-12 w-12 object-contain" />
+              <div>
+                <h3 className="text-xl font-bold">
+                  Stock <span className="text-accent">24/7</span>
+                </h3>
+                <p className="text-xs text-primary-foreground/60">
+                  By Zion Link Technologies
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-primary-foreground/80 mb-2">
               Instant liquor business loans. Access working capital in under 24 hours.
             </p>
-            <p className="text-xs text-primary-foreground/60">
-              By Zion Links Technologies
+            <p className="text-xs text-primary-foreground/60 italic">
+              Growing With You
             </p>
           </div>
 
@@ -32,6 +41,11 @@ const Footer = () => {
               <li>
                 <Link to="/market" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   Market
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                  About
                 </Link>
               </li>
               <li>
@@ -101,7 +115,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/10 mt-8 pt-6 text-center text-sm text-primary-foreground/60">
-          <p>&copy; {new Date().getFullYear()} Zion Links Technologies. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Zion Link Technologies. All rights reserved.</p>
         </div>
       </div>
     </footer>

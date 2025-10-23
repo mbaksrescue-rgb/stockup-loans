@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/zion-link-logo.jpg";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,7 @@ const Navbar = () => {
     { to: "/", label: "Home" },
     { to: "/how-it-works", label: "How It Works" },
     { to: "/market", label: "Market" },
+    { to: "/about", label: "About" },
     { to: "/faqs", label: "FAQs" },
     { to: "/contact", label: "Contact" },
   ];
@@ -20,10 +22,13 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold text-primary-foreground">
-              Stock <span className="text-accent">24/7</span>
+            <img src={logo} alt="Zion Link Technologies" className="h-10 w-10 object-contain" />
+            <div className="flex flex-col">
+              <div className="text-lg font-bold text-primary-foreground leading-tight">
+                Stock <span className="text-accent">24/7</span>
+              </div>
+              <span className="text-xs text-primary-foreground/80 leading-tight hidden sm:block">by Zion Link Technologies</span>
             </div>
-            <span className="text-xs text-primary-foreground/80 hidden sm:block">by Zion Links</span>
           </Link>
 
           {/* Desktop Navigation */}
