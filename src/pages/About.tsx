@@ -12,7 +12,7 @@ const About = () => {
       image: omarImage
     },
     {
-      name: "Jackson Onyago",
+      name: "Jackson Omondi",
       role: "Director",
       image: jacksonImage
     }
