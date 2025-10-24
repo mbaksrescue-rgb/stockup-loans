@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/zion-link-logo.jpg";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
 
   const navLinks = [
@@ -46,9 +48,18 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            <Link to="/apply">
-              <Button variant="hero" size="sm">Apply Now</Button>
-            </Link>
+            {user ? (
+              <>
+                {isAdmin && <Link to="/admin"><Button variant="outline" size="sm">Admin</Button></Link>}
+                <Link to="/apply"><Button variant="hero" size="sm">Apply Now</Button></Link>
+                <Button variant="outline" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth"><Button variant="outline" size="sm">Sign In</Button></Link>
+                <Link to="/apply"><Button variant="hero" size="sm">Apply Now</Button></Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
