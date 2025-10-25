@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, DollarSign, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, DollarSign, Users, LogOut, Building2, BarChart3 } from 'lucide-react';
 import logo from '@/assets/zion-link-logo.jpg';
 
 const AdminLayout = () => {
@@ -11,8 +11,10 @@ const AdminLayout = () => {
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/applications', icon: FileText, label: 'Applications' },
-    { path: '/admin/disbursements', icon: DollarSign, label: 'Disbursements' },
-    { path: '/admin/customers', icon: Users, label: 'CRM' },
+    { path: '/admin/payments', icon: DollarSign, label: 'Payments' },
+    { path: '/admin/distributors', icon: Building2, label: 'Distributors' },
+    { path: '/admin/customers', icon: Users, label: 'Customers' },
+    { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   ];
 
   const isActive = (path: string) => {

@@ -18,7 +18,9 @@ import Auth from "./pages/Auth";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Applications from "./pages/admin/Applications";
-import Disbursements from "./pages/admin/Disbursements";
+import Payments from "./pages/admin/Payments";
+import Distributors from "./pages/admin/Distributors";
+import Analytics from "./pages/admin/Analytics";
 import Customers from "./pages/admin/Customers";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
@@ -47,7 +49,9 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="applications" element={<Applications />} />
-              <Route path="disbursements" element={<Disbursements />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="distributors" element={<Distributors />} />
+              <Route path="analytics" element={<Analytics />} />
               <Route path="customers" element={<Customers />} />
             </Route>
             <Route path="*" element={<NotFound />} />
