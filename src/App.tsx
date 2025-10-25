@@ -21,6 +21,9 @@ import Applications from "./pages/admin/Applications";
 import Payments from "./pages/admin/Payments";
 import Distributors from "./pages/admin/Distributors";
 import Analytics from "./pages/admin/Analytics";
+import RiskCompliance from "./pages/admin/RiskCompliance";
+import UserManagement from "./pages/admin/UserManagement";
+import Settings from "./pages/admin/Settings";
 import Customers from "./pages/admin/Customers";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
@@ -52,6 +55,9 @@ const App = () => (
               <Route path="payments" element={<Payments />} />
               <Route path="distributors" element={<Distributors />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="risk" element={<RiskCompliance />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="settings" element={<Settings />} />
               <Route path="customers" element={<Customers />} />
             </Route>
             <Route path="*" element={<NotFound />} />
