@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       customer_interactions: {
         Row: {
           created_at: string | null
@@ -159,6 +192,60 @@ export type Database = {
           },
         ]
       }
+      distributors: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          contact_person: string
+          created_at: string | null
+          email: string
+          id: string
+          last_payment_date: string | null
+          license_number: string | null
+          name: string
+          paybill_number: string | null
+          phone: string
+          physical_address: string | null
+          status: string | null
+          total_payments: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          contact_person: string
+          created_at?: string | null
+          email: string
+          id?: string
+          last_payment_date?: string | null
+          license_number?: string | null
+          name: string
+          paybill_number?: string | null
+          phone: string
+          physical_address?: string | null
+          status?: string | null
+          total_payments?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          contact_person?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_payment_date?: string | null
+          license_number?: string | null
+          name?: string
+          paybill_number?: string | null
+          phone?: string
+          physical_address?: string | null
+          status?: string | null
+          total_payments?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       loan_applications: {
         Row: {
           business_name: string
@@ -240,6 +327,99 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      risk_assessments: {
+        Row: {
+          aml_status: string | null
+          application_id: string | null
+          created_at: string | null
+          customer_id: string | null
+          fraud_flags: Json | null
+          id: string
+          kyc_status: string | null
+          risk_level: string | null
+          risk_score: number | null
+          updated_at: string | null
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          aml_status?: string | null
+          application_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          fraud_flags?: Json | null
+          id?: string
+          kyc_status?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          updated_at?: string | null
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          aml_status?: string | null
+          application_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          fraud_flags?: Json | null
+          id?: string
+          kyc_status?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          updated_at?: string | null
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }

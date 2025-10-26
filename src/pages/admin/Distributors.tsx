@@ -60,43 +60,33 @@ const Distributors = () => {
 
   const fetchDistributors = async () => {
     try {
-      // Fetch unique distributors from loan applications
-      const { data: applications, error } = await supabase
-        .from('loan_applications')
-        .select('distributor_name, distributor_paybill, distributor_contact');
+      // Fetch from distributors table
+      const { data, error } = await supabase
+        .from('distributors')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Group by distributor name and aggregate
-      const distributorMap = new Map<string, any>();
-      
-      applications?.forEach((app) => {
-        const name = app.distributor_name;
-        if (!distributorMap.has(name)) {
-          distributorMap.set(name, {
-            id: name,
-            name: name,
-            contact_person: '',
-            phone: app.distributor_contact || '',
-            email: '',
-            paybill: app.distributor_paybill || '',
-            bank_details: '',
-            license_number: '',
-            tax_id: '',
-            address: '',
-            verified: false,
-            total_transactions: 1,
-            total_amount: 0,
-            rating: 0,
-          });
-        } else {
-          const dist = distributorMap.get(name);
-          dist.total_transactions += 1;
-          distributorMap.set(name, dist);
-        }
-      });
+      // Transform to expected format
+      const transformedDistributors: Distributor[] = (data || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        contact_person: d.contact_person,
+        phone: d.phone,
+        email: d.email,
+        paybill: d.paybill_number || '',
+        bank_details: d.bank_name && d.account_number ? `${d.bank_name} - ${d.account_number}` : '',
+        license_number: d.license_number || '',
+        tax_id: '',
+        address: d.physical_address || '',
+        verified: d.status === 'active',
+        total_transactions: Math.floor(Number(d.total_payments || 0) / 100000), // Estimate transactions
+        total_amount: Number(d.total_payments || 0),
+        rating: d.status === 'active' ? 4.5 : 3.0,
+      }));
 
-      setDistributors(Array.from(distributorMap.values()));
+      setDistributors(transformedDistributors);
     } catch (error) {
       console.error('Error fetching distributors:', error);
       toast({
@@ -128,7 +118,22 @@ const Distributors = () => {
 
   const handleAddDistributor = async () => {
     try {
-      // In a real implementation, this would insert into a distributors table
+      const { error } = await supabase
+        .from('distributors')
+        .insert([{
+          name: form.name,
+          contact_person: form.contact_person,
+          phone: form.phone,
+          email: form.email,
+          paybill_number: form.paybill,
+          bank_name: form.bank_details.split('-')[0]?.trim() || '',
+          account_number: form.bank_details.split('-')[1]?.trim() || '',
+          license_number: form.license_number,
+          physical_address: form.address,
+        }]);
+
+      if (error) throw error;
+
       toast({
         title: 'Success',
         description: 'Distributor added successfully',
@@ -137,11 +142,11 @@ const Distributors = () => {
       setAddDialog(false);
       resetForm();
       fetchDistributors();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding distributor:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add distributor',
+        description: error.message || 'Failed to add distributor',
         variant: 'destructive',
       });
     }
@@ -149,7 +154,25 @@ const Distributors = () => {
 
   const handleEditDistributor = async () => {
     try {
-      // In a real implementation, this would update the distributors table
+      if (!selectedDistributor) return;
+
+      const { error } = await supabase
+        .from('distributors')
+        .update({
+          name: form.name,
+          contact_person: form.contact_person,
+          phone: form.phone,
+          email: form.email,
+          paybill_number: form.paybill,
+          bank_name: form.bank_details.split('-')[0]?.trim() || '',
+          account_number: form.bank_details.split('-')[1]?.trim() || '',
+          license_number: form.license_number,
+          physical_address: form.address,
+        })
+        .eq('id', selectedDistributor.id);
+
+      if (error) throw error;
+
       toast({
         title: 'Success',
         description: 'Distributor updated successfully',
@@ -159,11 +182,11 @@ const Distributors = () => {
       setSelectedDistributor(null);
       resetForm();
       fetchDistributors();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating distributor:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update distributor',
+        description: error.message || 'Failed to update distributor',
         variant: 'destructive',
       });
     }
