@@ -49,22 +49,31 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      // Fetch profiles with user roles
+      // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `);
+        .select('*');
 
       if (profilesError) throw profilesError;
+
+      // Fetch user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Create a map of user_id to role
+      const rolesMap = new Map(
+        (userRoles || []).map((ur: any) => [ur.user_id, ur.role])
+      );
 
       // Transform data
       const userData: User[] = (profiles || []).map((profile: any) => ({
         id: profile.id,
-        email: profile.id, // In real app, fetch from auth.users
+        email: profile.id, // Using ID as placeholder - real app would fetch from auth.users
         full_name: profile.full_name || 'Unknown',
-        role: profile.user_roles?.[0]?.role || 'user',
+        role: rolesMap.get(profile.id) || 'user',
         status: 'active',
         last_login: profile.created_at,
         created_at: profile.created_at,
