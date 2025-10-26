@@ -116,6 +116,7 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/10 mt-8 pt-6 text-center text-sm text-primary-foreground/60">
           <p>&copy; {new Date().getFullYear()} Zion Link Technologies. All rights reserved.</p>
+          <p className="mt-2">Created by Laban Panda Khisa</p>
         </div>
       </div>
     </footer>
