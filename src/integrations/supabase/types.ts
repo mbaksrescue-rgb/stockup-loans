@@ -246,14 +246,61 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_data: {
+        Row: {
+          analysis_result: Json | null
+          application_id: string | null
+          created_at: string | null
+          document_type: string
+          document_url: string
+          id: string
+          risk_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_result?: Json | null
+          application_id?: string | null
+          created_at?: string | null
+          document_type: string
+          document_url: string
+          id?: string
+          risk_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_result?: Json | null
+          application_id?: string | null
+          created_at?: string | null
+          document_type?: string
+          document_url?: string
+          id?: string
+          risk_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_data_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_applications: {
         Row: {
           business_name: string
+          business_registration_url: string | null
           created_at: string | null
           distributor_contact: string
           distributor_name: string
           distributor_paybill: string
+          documents_verified: boolean | null
           id: string
+          id_document_url: string | null
           loan_amount: number
           loan_purpose: string | null
           owner_name: string
@@ -261,6 +308,7 @@ export type Database = {
           physical_address: string
           registration_number: string
           rejection_reason: string | null
+          selfie_url: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -268,11 +316,14 @@ export type Database = {
         }
         Insert: {
           business_name: string
+          business_registration_url?: string | null
           created_at?: string | null
           distributor_contact: string
           distributor_name: string
           distributor_paybill: string
+          documents_verified?: boolean | null
           id?: string
+          id_document_url?: string | null
           loan_amount: number
           loan_purpose?: string | null
           owner_name: string
@@ -280,6 +331,7 @@ export type Database = {
           physical_address: string
           registration_number: string
           rejection_reason?: string | null
+          selfie_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -287,11 +339,14 @@ export type Database = {
         }
         Update: {
           business_name?: string
+          business_registration_url?: string | null
           created_at?: string | null
           distributor_contact?: string
           distributor_name?: string
           distributor_paybill?: string
+          documents_verified?: boolean | null
           id?: string
+          id_document_url?: string | null
           loan_amount?: number
           loan_purpose?: string | null
           owner_name?: string
@@ -299,6 +354,7 @@ export type Database = {
           physical_address?: string
           registration_number?: string
           rejection_reason?: string | null
+          selfie_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string

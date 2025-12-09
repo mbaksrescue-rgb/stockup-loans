@@ -19,6 +19,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Applications from "./pages/admin/Applications";
 import Payments from "./pages/admin/Payments";
+import Disbursements from "./pages/admin/Disbursements";
 import Distributors from "./pages/admin/Distributors";
 import Analytics from "./pages/admin/Analytics";
 import RiskCompliance from "./pages/admin/RiskCompliance";
@@ -53,6 +54,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="applications" element={<Applications />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="disbursements" element={<Disbursements />} />
               <Route path="distributors" element={<Distributors />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="risk" element={<RiskCompliance />} />
