@@ -22,6 +22,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react';
+
+interface RiskAssessment {
+  id: string;
+  application_id: string | null;
+  risk_score: number | null;
+  risk_level: string | null;
+  kyc_status: string | null;
+  aml_status: string | null;
+  fraud_flags: unknown;
+  verification_notes: string | null;
+}
 
 interface Application {
   id: string;
@@ -39,6 +51,7 @@ interface Application {
   loan_purpose: string;
   owner_phone: string;
   rejection_reason: string | null;
+  risk_assessment?: RiskAssessment;
 }
 
 const Applications = () => {
@@ -52,16 +65,33 @@ const Applications = () => {
   }, []);
 
   const fetchApplications = async () => {
-    const { data, error } = await supabase
+    // Fetch applications
+    const { data: appsData, error: appsError } = await supabase
       .from('loan_applications')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
+    if (appsError) {
       toast.error('Failed to fetch applications');
-    } else {
-      setApplications(data || []);
+      return;
     }
+
+    // Fetch risk assessments
+    const { data: riskData, error: riskError } = await supabase
+      .from('risk_assessments')
+      .select('*');
+
+    if (riskError) {
+      console.error('Failed to fetch risk assessments:', riskError);
+    }
+
+    // Map risk assessments to applications
+    const applicationsWithRisk = (appsData || []).map((app) => {
+      const riskAssessment = riskData?.find((r) => r.application_id === app.id);
+      return { ...app, risk_assessment: riskAssessment };
+    });
+
+    setApplications(applicationsWithRisk);
   };
 
   const handleApprove = async (id: string) => {
@@ -114,6 +144,27 @@ const Applications = () => {
     return <Badge variant={variants[status] || 'outline'}>{status}</Badge>;
   };
 
+  const getRiskBadge = (riskLevel: string | null | undefined, riskScore: number | null | undefined) => {
+    if (!riskLevel) {
+      return <Badge variant="outline" className="text-muted-foreground">Not Assessed</Badge>;
+    }
+
+    const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; className: string }> = {
+      low: { variant: 'default', icon: <CheckCircle className="w-3 h-3 mr-1" />, className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      medium: { variant: 'secondary', icon: <AlertTriangle className="w-3 h-3 mr-1" />, className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+      high: { variant: 'destructive', icon: <XCircle className="w-3 h-3 mr-1" />, className: 'bg-red-500/10 text-red-600 border-red-500/20' },
+    };
+
+    const { icon, className } = config[riskLevel] || config.medium;
+
+    return (
+      <Badge variant="outline" className={className}>
+        {icon}
+        {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)} ({riskScore || 0})
+      </Badge>
+    );
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Loan Applications</h1>
@@ -129,6 +180,7 @@ const Applications = () => {
                 <TableHead>Business Name</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Risk Level</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
@@ -140,6 +192,9 @@ const Applications = () => {
                   <TableCell className="font-medium">{app.business_name}</TableCell>
                   <TableCell>{app.owner_name}</TableCell>
                   <TableCell>KSh {app.loan_amount.toLocaleString()}</TableCell>
+                  <TableCell>
+                    {getRiskBadge(app.risk_assessment?.risk_level, app.risk_assessment?.risk_score)}
+                  </TableCell>
                   <TableCell>{getStatusBadge(app.status)}</TableCell>
                   <TableCell>{format(new Date(app.created_at), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>
@@ -169,6 +224,77 @@ const Applications = () => {
           
           {selectedApp && (
             <div className="space-y-4">
+              {/* Risk Assessment Card */}
+              {selectedApp.risk_assessment && (
+                <Card className="border-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      AI Risk Assessment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-semibold">Risk Score</Label>
+                        <p className="text-2xl font-bold">
+                          {selectedApp.risk_assessment.risk_score || 'N/A'}
+                          <span className="text-sm font-normal text-muted-foreground">/100</span>
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-semibold">Risk Level</Label>
+                        <div className="mt-1">
+                          {getRiskBadge(selectedApp.risk_assessment.risk_level, selectedApp.risk_assessment.risk_score)}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-semibold">KYC Status</Label>
+                        <Badge 
+                          variant={selectedApp.risk_assessment.kyc_status === 'verified' ? 'default' : 'outline'}
+                          className={selectedApp.risk_assessment.kyc_status === 'verified' ? 'bg-green-500/10 text-green-600 border-green-500/20' : ''}
+                        >
+                          {selectedApp.risk_assessment.kyc_status || 'Pending'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-semibold">AML Status</Label>
+                        <Badge 
+                          variant={selectedApp.risk_assessment.aml_status === 'clear' ? 'default' : 'outline'}
+                          className={selectedApp.risk_assessment.aml_status === 'clear' ? 'bg-green-500/10 text-green-600 border-green-500/20' : ''}
+                        >
+                          {selectedApp.risk_assessment.aml_status || 'Pending'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {selectedApp.risk_assessment.fraud_flags && 
+                     Array.isArray(selectedApp.risk_assessment.fraud_flags) && 
+                     (selectedApp.risk_assessment.fraud_flags as string[]).length > 0 && (
+                      <div>
+                        <Label className="text-sm font-semibold text-destructive">Fraud Flags</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(selectedApp.risk_assessment.fraud_flags as string[]).map((flag, idx) => (
+                            <Badge key={idx} variant="destructive" className="text-xs">
+                              {flag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedApp.risk_assessment.verification_notes && (
+                      <div>
+                        <Label className="text-sm font-semibold">AI Recommendation</Label>
+                        <p className="text-sm text-muted-foreground mt-1 p-2 bg-muted rounded">
+                          {selectedApp.risk_assessment.verification_notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-semibold">Business Name</Label>
