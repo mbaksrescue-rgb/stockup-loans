@@ -177,6 +177,41 @@ const Apply = () => {
         console.error('KYC insert error:', kycError);
       }
 
+      // Trigger AI risk analysis
+      toast({
+        title: "Analyzing Application...",
+        description: "Our AI is reviewing your documents for risk assessment.",
+      });
+
+      try {
+        const { error: riskError } = await supabase.functions.invoke('analyze-risk', {
+          body: {
+            applicationId: application.id,
+            documentUrls: {
+              idDocument: documentUrls.idDocument,
+              businessRegistration: documentUrls.businessRegistration,
+              selfie: documentUrls.selfie
+            },
+            businessData: {
+              businessName: formData.businessName,
+              registrationNumber: formData.registrationNumber,
+              yearsInOperation: formData.yearsInOperation,
+              physicalAddress: formData.physicalAddress,
+              loanAmount: formData.loanAmount,
+              loanPurpose: formData.loanPurpose,
+              distributorName: formData.distributorName
+            }
+          }
+        });
+
+        if (riskError) {
+          console.error('Risk analysis error:', riskError);
+        }
+      } catch (riskErr) {
+        console.error('Risk analysis failed:', riskErr);
+        // Don't fail the submission if risk analysis fails
+      }
+
       toast({
         title: "Application Submitted! 🎉",
         description: "Your application is being reviewed. We'll contact you within 24 hours.",
