@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { AlertTriangle, CheckCircle, XCircle, Shield, MessageSquare } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Shield, MessageSquare, Brain, Loader2 } from 'lucide-react';
 import { sendStatusNotification } from '@/lib/sms';
 
 interface RiskAssessment {
@@ -60,6 +60,7 @@ const Applications = () => {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [analyzingRisk, setAnalyzingRisk] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -93,6 +94,46 @@ const Applications = () => {
     });
 
     setApplications(applicationsWithRisk);
+  };
+
+  const handleRunRiskAnalysis = async (app: Application) => {
+    setAnalyzingRisk(app.id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-risk', {
+        body: {
+          applicationId: app.id,
+          documentUrls: {
+            idDocument: null,
+            businessRegistration: null,
+            selfie: null
+          },
+          businessData: {
+            businessName: app.business_name,
+            registrationNumber: app.registration_number,
+            yearsInOperation: app.years_in_operation,
+            physicalAddress: app.physical_address,
+            loanAmount: app.loan_amount,
+            loanPurpose: app.loan_purpose,
+            distributorName: app.distributor_name
+          }
+        }
+      });
+
+      if (error) {
+        toast.error('Failed to run risk analysis: ' + error.message);
+      } else {
+        toast.success('AI risk analysis completed!', {
+          icon: <Brain className="w-4 h-4" />,
+        });
+        fetchApplications();
+      }
+    } catch (err) {
+      console.error('Risk analysis error:', err);
+      toast.error('Failed to run risk analysis');
+    } finally {
+      setAnalyzingRisk(null);
+    }
   };
 
   const handleApprove = async (id: string) => {
@@ -242,13 +283,27 @@ const Applications = () => {
                   <TableCell>{getStatusBadge(app.status)}</TableCell>
                   <TableCell>{format(new Date(app.created_at), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedApp(app)}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApp(app)}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleRunRiskAnalysis(app)}
+                        disabled={analyzingRisk === app.id}
+                      >
+                        {analyzingRisk === app.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Brain className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
