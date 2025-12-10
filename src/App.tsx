@@ -26,6 +26,7 @@ import RiskCompliance from "./pages/admin/RiskCompliance";
 import UserManagement from "./pages/admin/UserManagement";
 import Settings from "./pages/admin/Settings";
 import Customers from "./pages/admin/Customers";
+import DocumentVerification from "./pages/admin/DocumentVerification";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 
@@ -53,14 +54,15 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="applications" element={<Applications />} />
-              <Route path="payments" element={<Payments />} />
+              <Route path="documents" element={<DocumentVerification />} />
               <Route path="disbursements" element={<Disbursements />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="distributors" element={<Distributors />} />
+              <Route path="customers" element={<Customers />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="risk" element={<RiskCompliance />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="customers" element={<Customers />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

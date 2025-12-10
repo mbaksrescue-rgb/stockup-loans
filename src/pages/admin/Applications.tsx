@@ -22,7 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Shield, MessageSquare } from 'lucide-react';
+import { sendStatusNotification } from '@/lib/sms';
 
 interface RiskAssessment {
   id: string;
@@ -95,6 +96,9 @@ const Applications = () => {
   };
 
   const handleApprove = async (id: string) => {
+    const app = applications.find(a => a.id === id);
+    if (!app) return;
+
     setLoading(true);
     const { error } = await supabase
       .from('loan_applications')
@@ -105,6 +109,24 @@ const Applications = () => {
       toast.error('Failed to approve application');
     } else {
       toast.success('Application approved successfully');
+      
+      // Send SMS notification
+      const smsResult = await sendStatusNotification(
+        app.owner_phone,
+        'approved',
+        app.business_name,
+        id,
+        app.loan_amount
+      );
+      
+      if (smsResult.success) {
+        toast.success('SMS notification sent to applicant', {
+          icon: <MessageSquare className="w-4 h-4" />,
+        });
+      } else {
+        toast.warning('Application approved but SMS notification failed');
+      }
+      
       fetchApplications();
       setSelectedApp(null);
     }
@@ -117,6 +139,9 @@ const Applications = () => {
       return;
     }
 
+    const app = applications.find(a => a.id === id);
+    if (!app) return;
+
     setLoading(true);
     const { error } = await supabase
       .from('loan_applications')
@@ -127,6 +152,25 @@ const Applications = () => {
       toast.error('Failed to reject application');
     } else {
       toast.success('Application rejected');
+      
+      // Send SMS notification
+      const smsResult = await sendStatusNotification(
+        app.owner_phone,
+        'rejected',
+        app.business_name,
+        id,
+        app.loan_amount,
+        rejectionReason
+      );
+      
+      if (smsResult.success) {
+        toast.success('SMS notification sent to applicant', {
+          icon: <MessageSquare className="w-4 h-4" />,
+        });
+      } else {
+        toast.warning('Application rejected but SMS notification failed');
+      }
+      
       fetchApplications();
       setSelectedApp(null);
       setRejectionReason('');
