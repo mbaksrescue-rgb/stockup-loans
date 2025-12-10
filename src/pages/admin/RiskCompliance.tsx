@@ -6,43 +6,72 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, AlertTriangle, CheckCircle, XCircle, Shield, FileCheck, AlertCircle, Eye, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, AlertTriangle, CheckCircle, XCircle, Shield, FileCheck, AlertCircle, Eye, Clock, Brain, Loader2, FileImage, User, Building2, Camera } from 'lucide-react';
+import { toast } from 'sonner';
+import { formatDistanceToNow, format } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
-interface RiskAssessment {
+interface RiskAssessmentDB {
+  id: string;
+  application_id: string | null;
+  risk_score: number | null;
+  risk_level: string | null;
+  kyc_status: string | null;
+  aml_status: string | null;
+  fraud_flags: unknown;
+  verification_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Application {
   id: string;
   business_name: string;
   owner_name: string;
-  license_verified: boolean;
-  kyc_completed: boolean;
-  aml_checked: boolean;
-  risk_score: number;
-  risk_level: 'low' | 'medium' | 'high';
-  fraud_flags: string[];
-  last_checked: string;
+  owner_phone: string;
+  registration_number: string;
+  years_in_operation: number;
+  physical_address: string;
+  loan_amount: number;
+  loan_purpose: string;
+  distributor_name: string;
+  status: string;
+  documents_verified: boolean;
+  id_document_url: string | null;
+  business_registration_url: string | null;
+  selfie_url: string | null;
+  created_at: string;
+}
+
+interface CombinedAssessment {
+  id: string;
+  application: Application;
+  risk_assessment: RiskAssessmentDB | null;
+  has_documents: boolean;
 }
 
 interface AuditLog {
   id: string;
-  user_email: string;
   action: string;
   entity_type: string;
-  entity_id: string;
-  details: string;
-  timestamp: string;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+  user_id: string | null;
 }
 
 const RiskCompliance = () => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
-  const [filteredAssessments, setFilteredAssessments] = useState<RiskAssessment[]>([]);
+  const [assessments, setAssessments] = useState<CombinedAssessment[]>([]);
+  const [filteredAssessments, setFilteredAssessments] = useState<CombinedAssessment[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
+  const [selectedAssessment, setSelectedAssessment] = useState<CombinedAssessment | null>(null);
   const [detailsDialog, setDetailsDialog] = useState(false);
+  const [documentDialog, setDocumentDialog] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+  const [analyzingRisk, setAnalyzingRisk] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -53,76 +82,54 @@ const RiskCompliance = () => {
   }, [searchQuery, assessments]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      // Fetch loan applications and create risk assessments
-      const { data: applications, error } = await supabase
+      // Fetch loan applications
+      const { data: applications, error: appError } = await supabase
         .from('loan_applications')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (appError) throw appError;
 
-      // Generate risk assessments
-      const assessmentData: RiskAssessment[] = (applications || []).map(app => {
-        const fraudFlags: string[] = [];
-        let riskScore = 0;
+      // Fetch risk assessments
+      const { data: riskAssessments, error: riskError } = await supabase
+        .from('risk_assessments')
+        .select('*');
 
-        // Check for fraud indicators
-        if (!app.registration_number) {
-          fraudFlags.push('Missing registration number');
-          riskScore += 20;
-        }
+      if (riskError) {
+        console.error('Risk assessments error:', riskError);
+      }
 
-        if (app.years_in_operation < 1) {
-          fraudFlags.push('Business less than 1 year old');
-          riskScore += 15;
-        }
+      // Fetch audit logs
+      const { data: logs, error: logsError } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-        if (Number(app.loan_amount) > 500000) {
-          fraudFlags.push('High loan amount requested');
-          riskScore += 10;
-        }
+      if (logsError) {
+        console.error('Audit logs error:', logsError);
+      }
 
-        // Determine risk level
-        let riskLevel: 'low' | 'medium' | 'high' = 'low';
-        if (riskScore >= 30) riskLevel = 'high';
-        else if (riskScore >= 15) riskLevel = 'medium';
-
+      // Combine applications with their risk assessments
+      const combinedData: CombinedAssessment[] = (applications || []).map(app => {
+        const riskAssessment = riskAssessments?.find(r => r.application_id === app.id) || null;
+        const hasDocuments = !!(app.id_document_url || app.business_registration_url || app.selfie_url);
+        
         return {
           id: app.id,
-          business_name: app.business_name,
-          owner_name: app.owner_name,
-          license_verified: !!app.registration_number,
-          kyc_completed: !!app.owner_name && !!app.owner_phone,
-          aml_checked: false,
-          risk_score: riskScore,
-          risk_level: riskLevel,
-          fraud_flags: fraudFlags,
-          last_checked: app.created_at,
+          application: app,
+          risk_assessment: riskAssessment,
+          has_documents: hasDocuments,
         };
       });
 
-      setAssessments(assessmentData);
-
-      // Generate sample audit logs
-      const logs: AuditLog[] = applications?.slice(0, 20).map((app, idx) => ({
-        id: `log-${idx}`,
-        user_email: 'admin@zionlink.com',
-        action: ['Approved Loan', 'Rejected Loan', 'Updated Customer', 'Verified Document', 'Sent Payment'][idx % 5],
-        entity_type: ['loan_application', 'customer', 'disbursement'][idx % 3],
-        entity_id: app.id,
-        details: `Action performed on ${app.business_name}`,
-        timestamp: app.created_at,
-      })) || [];
-
-      setAuditLogs(logs);
+      setAssessments(combinedData);
+      setAuditLogs((logs || []) as AuditLog[]);
     } catch (error) {
       console.error('Error fetching risk data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load risk assessment data',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load risk assessment data');
     } finally {
       setLoading(false);
     }
@@ -136,21 +143,81 @@ const RiskCompliance = () => {
 
     const filtered = assessments.filter(
       (a) =>
-        a.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.owner_name.toLowerCase().includes(searchQuery.toLowerCase())
+        a.application.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.application.owner_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     setFilteredAssessments(filtered);
   };
 
-  const getRiskBadge = (level: string) => {
-    const variants: Record<string, { variant: any; icon: any; className: string }> = {
-      low: { variant: 'default', icon: CheckCircle, className: 'bg-green-100 text-green-800 hover:bg-green-100' },
-      medium: { variant: 'secondary', icon: AlertCircle, className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' },
-      high: { variant: 'destructive', icon: AlertTriangle, className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+  const handleRunRiskAnalysis = async (assessment: CombinedAssessment) => {
+    setAnalyzingRisk(assessment.id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-risk', {
+        body: {
+          applicationId: assessment.application.id,
+          documentUrls: {
+            idDocument: assessment.application.id_document_url,
+            businessRegistration: assessment.application.business_registration_url,
+            selfie: assessment.application.selfie_url
+          },
+          businessData: {
+            businessName: assessment.application.business_name,
+            registrationNumber: assessment.application.registration_number,
+            yearsInOperation: assessment.application.years_in_operation,
+            physicalAddress: assessment.application.physical_address,
+            loanAmount: assessment.application.loan_amount,
+            loanPurpose: assessment.application.loan_purpose,
+            distributorName: assessment.application.distributor_name
+          }
+        }
+      });
+
+      if (error) {
+        toast.error('Failed to run risk analysis: ' + error.message);
+      } else {
+        toast.success('AI risk analysis completed!');
+        fetchData();
+      }
+    } catch (err) {
+      console.error('Risk analysis error:', err);
+      toast.error('Failed to run risk analysis');
+    } finally {
+      setAnalyzingRisk(null);
+    }
+  };
+
+  const handleViewDocument = async (url: string | null) => {
+    if (!url) {
+      toast.error('Document not available');
+      return;
+    }
+
+    const { data } = await supabase.storage
+      .from('kyc-documents')
+      .createSignedUrl(url, 3600);
+
+    if (data?.signedUrl) {
+      setSelectedDocument(data.signedUrl);
+      setDocumentDialog(true);
+    } else {
+      toast.error('Failed to load document');
+    }
+  };
+
+  const getRiskBadge = (level: string | null) => {
+    if (!level) {
+      return <Badge variant="outline" className="text-muted-foreground">Not Assessed</Badge>;
+    }
+
+    const variants: Record<string, { icon: React.ElementType; className: string }> = {
+      low: { icon: CheckCircle, className: 'bg-green-100 text-green-800 hover:bg-green-100' },
+      medium: { icon: AlertCircle, className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' },
+      high: { icon: AlertTriangle, className: 'bg-red-100 text-red-800 hover:bg-red-100' },
     };
 
-    const { icon: Icon, className } = variants[level] || variants.low;
+    const { icon: Icon, className } = variants[level] || variants.medium;
 
     return (
       <Badge className={className}>
@@ -160,7 +227,20 @@ const RiskCompliance = () => {
     );
   };
 
-  const viewDetails = (assessment: RiskAssessment) => {
+  const getStatusBadge = (status: string | null) => {
+    if (!status || status === 'pending') {
+      return <Clock className="h-5 w-5 text-yellow-600" />;
+    }
+    if (status === 'verified' || status === 'clear') {
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    }
+    if (status === 'flagged') {
+      return <XCircle className="h-5 w-5 text-red-600" />;
+    }
+    return <Clock className="h-5 w-5 text-muted-foreground" />;
+  };
+
+  const viewDetails = (assessment: CombinedAssessment) => {
     setSelectedAssessment(assessment);
     setDetailsDialog(true);
   };
@@ -175,25 +255,25 @@ const RiskCompliance = () => {
 
   const stats = {
     total: assessments.length,
-    highRisk: assessments.filter(a => a.risk_level === 'high').length,
-    mediumRisk: assessments.filter(a => a.risk_level === 'medium').length,
-    lowRisk: assessments.filter(a => a.risk_level === 'low').length,
-    kycCompleted: assessments.filter(a => a.kyc_completed).length,
-    licenseVerified: assessments.filter(a => a.license_verified).length,
+    highRisk: assessments.filter(a => a.risk_assessment?.risk_level === 'high').length,
+    mediumRisk: assessments.filter(a => a.risk_assessment?.risk_level === 'medium').length,
+    lowRisk: assessments.filter(a => a.risk_assessment?.risk_level === 'low').length,
+    pendingVerification: assessments.filter(a => !a.application.documents_verified && a.has_documents).length,
+    kycVerified: assessments.filter(a => a.risk_assessment?.kyc_status === 'verified').length,
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Risk & Compliance</h1>
-        <p className="text-muted-foreground">Monitor KYC/AML compliance and fraud detection</p>
+        <p className="text-muted-foreground">Monitor KYC/AML compliance and AI risk assessments</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Entities</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Applications</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -225,26 +305,26 @@ const RiskCompliance = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">KYC Complete</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Docs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.kycCompleted}</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.pendingVerification}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Verified</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">KYC Verified</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.licenseVerified}</div>
+            <div className="text-2xl font-bold">{stats.kycVerified}</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="assessments" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="assessments">Risk Assessments</TabsTrigger>
-          <TabsTrigger value="verification">Document Verification</TabsTrigger>
+          <TabsTrigger value="assessments">AI Risk Assessments</TabsTrigger>
+          <TabsTrigger value="documents">Document Review</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
 
@@ -267,8 +347,8 @@ const RiskCompliance = () => {
           {/* Risk Assessments Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Risk Assessment Dashboard</CardTitle>
-              <CardDescription>Monitor customer risk levels and compliance status</CardDescription>
+              <CardTitle>AI Risk Assessment Dashboard</CardTitle>
+              <CardDescription>View AI-generated risk scores and compliance status</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -279,70 +359,70 @@ const RiskCompliance = () => {
                     <TableHead>Risk Score</TableHead>
                     <TableHead>Risk Level</TableHead>
                     <TableHead>KYC</TableHead>
-                    <TableHead>License</TableHead>
                     <TableHead>AML</TableHead>
-                    <TableHead>Fraud Flags</TableHead>
+                    <TableHead>Flags</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAssessments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No assessments found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAssessments.map((assessment) => (
-                      <TableRow key={assessment.id}>
-                        <TableCell className="font-medium">{assessment.business_name}</TableCell>
-                        <TableCell>{assessment.owner_name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="text-lg font-bold">{assessment.risk_score}</div>
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </TableCell>
-                        <TableCell>{getRiskBadge(assessment.risk_level)}</TableCell>
-                        <TableCell>
-                          {assessment.kyc_completed ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-red-600" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {assessment.license_verified ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-red-600" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {assessment.aml_checked ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-orange-600" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {assessment.fraud_flags.length > 0 ? (
-                            <Badge variant="destructive" className="gap-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              {assessment.fraud_flags.length}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">None</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="outline" onClick={() => viewDetails(assessment)}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredAssessments.map((assessment) => {
+                      const fraudFlags = assessment.risk_assessment?.fraud_flags;
+                      const flagCount = Array.isArray(fraudFlags) ? fraudFlags.length : 0;
+                      
+                      return (
+                        <TableRow key={assessment.id}>
+                          <TableCell className="font-medium">{assessment.application.business_name}</TableCell>
+                          <TableCell>{assessment.application.owner_name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="text-lg font-bold">
+                                {assessment.risk_assessment?.risk_score ?? '—'}
+                              </div>
+                              <Shield className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </TableCell>
+                          <TableCell>{getRiskBadge(assessment.risk_assessment?.risk_level || null)}</TableCell>
+                          <TableCell>{getStatusBadge(assessment.risk_assessment?.kyc_status || null)}</TableCell>
+                          <TableCell>{getStatusBadge(assessment.risk_assessment?.aml_status || null)}</TableCell>
+                          <TableCell>
+                            {flagCount > 0 ? (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {flagCount}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">None</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => viewDetails(assessment)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                onClick={() => handleRunRiskAnalysis(assessment)}
+                                disabled={analyzingRisk === assessment.id}
+                              >
+                                {analyzingRisk === assessment.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Brain className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -350,46 +430,79 @@ const RiskCompliance = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="verification">
+        <TabsContent value="documents">
           <Card>
             <CardHeader>
-              <CardTitle>Document Verification Queue</CardTitle>
-              <CardDescription>Review and verify customer documents</CardDescription>
+              <CardTitle>Document Review Queue</CardTitle>
+              <CardDescription>Review and verify uploaded KYC documents</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredAssessments.filter(a => !a.license_verified || !a.kyc_completed).map(assessment => (
+                {filteredAssessments.filter(a => a.has_documents).map(assessment => (
                   <div key={assessment.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <FileCheck className="h-8 w-8 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">{assessment.business_name}</p>
-                        <p className="text-sm text-muted-foreground">{assessment.owner_name}</p>
+                        <p className="font-medium">{assessment.application.business_name}</p>
+                        <p className="text-sm text-muted-foreground">{assessment.application.owner_name}</p>
                         <div className="flex gap-2 mt-2">
-                          {!assessment.license_verified && (
-                            <Badge variant="outline">License Pending</Badge>
+                          {assessment.application.id_document_url && (
+                            <Badge variant="outline" className="gap-1">
+                              <User className="h-3 w-3" /> ID
+                            </Badge>
                           )}
-                          {!assessment.kyc_completed && (
-                            <Badge variant="outline">KYC Pending</Badge>
+                          {assessment.application.business_registration_url && (
+                            <Badge variant="outline" className="gap-1">
+                              <Building2 className="h-3 w-3" /> Business
+                            </Badge>
+                          )}
+                          {assessment.application.selfie_url && (
+                            <Badge variant="outline" className="gap-1">
+                              <Camera className="h-3 w-3" /> Selfie
+                            </Badge>
+                          )}
+                          {assessment.application.documents_verified ? (
+                            <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending</Badge>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                      <Button size="sm">
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Verify
-                      </Button>
+                      {assessment.application.id_document_url && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDocument(assessment.application.id_document_url)}
+                        >
+                          <User className="h-4 w-4 mr-1" /> View ID
+                        </Button>
+                      )}
+                      {assessment.application.business_registration_url && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDocument(assessment.application.business_registration_url)}
+                        >
+                          <Building2 className="h-4 w-4 mr-1" /> View Reg
+                        </Button>
+                      )}
+                      {assessment.application.selfie_url && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDocument(assessment.application.selfie_url)}
+                        >
+                          <Camera className="h-4 w-4 mr-1" /> View Selfie
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
-                {filteredAssessments.filter(a => !a.license_verified || !a.kyc_completed).length === 0 && (
+                {filteredAssessments.filter(a => a.has_documents).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    All documents verified
+                    No documents to review
                   </div>
                 )}
               </div>
@@ -401,33 +514,41 @@ const RiskCompliance = () => {
           <Card>
             <CardHeader>
               <CardTitle>Audit Log</CardTitle>
-              <CardDescription>Track all administrative actions and changes</CardDescription>
+              <CardDescription>Track all system actions and changes</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Timestamp</TableHead>
-                    <TableHead>User</TableHead>
                     <TableHead>Action</TableHead>
                     <TableHead>Entity Type</TableHead>
                     <TableHead>Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {auditLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-sm">
-                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                  {auditLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No audit logs found
                       </TableCell>
-                      <TableCell className="font-medium">{log.user_email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{log.action}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{log.entity_type}</TableCell>
-                      <TableCell className="text-sm">{log.details}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    auditLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-sm">
+                          {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.action}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{log.entity_type}</TableCell>
+                        <TableCell className="text-sm max-w-xs truncate">
+                          {log.details ? JSON.stringify(log.details).slice(0, 50) + '...' : '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -437,83 +558,196 @@ const RiskCompliance = () => {
 
       {/* Details Dialog */}
       <Dialog open={detailsDialog} onOpenChange={setDetailsDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Risk Assessment Details</DialogTitle>
-            <DialogDescription>{selectedAssessment?.business_name}</DialogDescription>
+            <DialogDescription>{selectedAssessment?.application.business_name}</DialogDescription>
           </DialogHeader>
           {selectedAssessment && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Owner</p>
-                  <p className="text-lg">{selectedAssessment.owner_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Risk Level</p>
-                  <div className="mt-1">{getRiskBadge(selectedAssessment.risk_level)}</div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Risk Score</p>
-                  <p className="text-lg font-bold">{selectedAssessment.risk_score}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Last Checked</p>
-                  <p className="text-sm">{formatDistanceToNow(new Date(selectedAssessment.last_checked), { addSuffix: true })}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Compliance Status</p>
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    {selectedAssessment.kyc_completed ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    <span className="text-sm">KYC</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedAssessment.license_verified ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    <span className="text-sm">License</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedAssessment.aml_checked ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-orange-600" />
-                    )}
-                    <span className="text-sm">AML</span>
-                  </div>
-                </div>
-              </div>
-
-              {selectedAssessment.fraud_flags.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Fraud Flags</p>
-                  <div className="space-y-2">
-                    {selectedAssessment.fraud_flags.map((flag, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded">
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <span className="text-sm text-red-800">{flag}</span>
+            <div className="space-y-6 py-4">
+              {/* AI Risk Assessment */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    AI Risk Assessment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedAssessment.risk_assessment ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Risk Score</Label>
+                        <p className="text-2xl font-bold">
+                          {selectedAssessment.risk_assessment.risk_score ?? 'N/A'}
+                          <span className="text-sm font-normal text-muted-foreground">/100</span>
+                        </p>
                       </div>
-                    ))}
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Risk Level</Label>
+                        <div className="mt-1">
+                          {getRiskBadge(selectedAssessment.risk_assessment.risk_level)}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">KYC Status</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getStatusBadge(selectedAssessment.risk_assessment.kyc_status)}
+                          <span className="capitalize">{selectedAssessment.risk_assessment.kyc_status || 'Pending'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">AML Status</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getStatusBadge(selectedAssessment.risk_assessment.aml_status)}
+                          <span className="capitalize">{selectedAssessment.risk_assessment.aml_status || 'Pending'}</span>
+                        </div>
+                      </div>
+                      {Array.isArray(selectedAssessment.risk_assessment.fraud_flags) && 
+                       selectedAssessment.risk_assessment.fraud_flags.length > 0 && (
+                        <div className="col-span-2">
+                          <Label className="text-sm text-destructive">Fraud Flags</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(selectedAssessment.risk_assessment.fraud_flags as string[]).map((flag, idx) => (
+                              <Badge key={idx} variant="destructive" className="text-xs">
+                                {flag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {selectedAssessment.risk_assessment.verification_notes && (
+                        <div className="col-span-2">
+                          <Label className="text-sm text-muted-foreground">AI Recommendation</Label>
+                          <p className="text-sm mt-1 p-2 bg-muted rounded">
+                            {selectedAssessment.risk_assessment.verification_notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground mb-4">No AI assessment available</p>
+                      <Button onClick={() => handleRunRiskAnalysis(selectedAssessment)}>
+                        <Brain className="h-4 w-4 mr-2" />
+                        Run AI Analysis
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Business Details */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Business Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label className="text-muted-foreground">Owner</Label>
+                      <p className="font-medium">{selectedAssessment.application.owner_name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Phone</Label>
+                      <p className="font-medium">{selectedAssessment.application.owner_phone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Registration</Label>
+                      <p className="font-medium">{selectedAssessment.application.registration_number}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Years Operating</Label>
+                      <p className="font-medium">{selectedAssessment.application.years_in_operation} years</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Loan Amount</Label>
+                      <p className="font-medium">KSh {selectedAssessment.application.loan_amount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Status</Label>
+                      <Badge variant="outline" className="capitalize">{selectedAssessment.application.status}</Badge>
+                    </div>
                   </div>
-                </div>
-              )}
+                </CardContent>
+              </Card>
+
+              {/* Documents */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Documents</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-24 flex-col gap-2"
+                      disabled={!selectedAssessment.application.id_document_url}
+                      onClick={() => handleViewDocument(selectedAssessment.application.id_document_url)}
+                    >
+                      <User className="h-6 w-6" />
+                      <span className="text-xs">ID Document</span>
+                      {selectedAssessment.application.id_document_url ? (
+                        <Badge variant="secondary" className="text-xs">View</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Missing</Badge>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex-col gap-2"
+                      disabled={!selectedAssessment.application.business_registration_url}
+                      onClick={() => handleViewDocument(selectedAssessment.application.business_registration_url)}
+                    >
+                      <Building2 className="h-6 w-6" />
+                      <span className="text-xs">Business Reg</span>
+                      {selectedAssessment.application.business_registration_url ? (
+                        <Badge variant="secondary" className="text-xs">View</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Missing</Badge>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex-col gap-2"
+                      disabled={!selectedAssessment.application.selfie_url}
+                      onClick={() => handleViewDocument(selectedAssessment.application.selfie_url)}
+                    >
+                      <Camera className="h-6 w-6" />
+                      <span className="text-xs">Selfie</span>
+                      {selectedAssessment.application.selfie_url ? (
+                        <Badge variant="secondary" className="text-xs">View</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Missing</Badge>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsDialog(false)}>
-              Close
-            </Button>
-            <Button>Mark as Reviewed</Button>
-          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={documentDialog} onOpenChange={setDocumentDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Document Viewer</DialogTitle>
+          </DialogHeader>
+          {selectedDocument && (
+            <div className="flex items-center justify-center bg-muted rounded-lg p-4 min-h-[400px]">
+              <img
+                src={selectedDocument}
+                alt="Document"
+                className="max-w-full max-h-[70vh] object-contain rounded"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  toast.error('Failed to load document image');
+                }}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
