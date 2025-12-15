@@ -4,14 +4,16 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import bottleKenyaCane from "@/assets/bottle-kenya-cane.png";
 import bottleJohnnieWalker from "@/assets/bottle-johnnie-walker.png";
-import bottleCounty from "@/assets/bottle-county.png";
+import bottleRobertson from "@/assets/bottle-robertson.png";
+import bottleVersus from "@/assets/bottle-versus.png";
 import bottleGilbeys from "@/assets/bottle-gilbeys.png";
 
 const bottles = [
-  { src: bottleKenyaCane, alt: "Kenya Cane", position: "left-[5%]" },
-  { src: bottleJohnnieWalker, alt: "Johnnie Walker", position: "left-[25%]" },
-  { src: bottleCounty, alt: "County", position: "right-[25%]" },
-  { src: bottleGilbeys, alt: "Gilbey's Gin", position: "right-[5%]" },
+  { src: bottleKenyaCane, alt: "Kenya Cane", position: "left-[2%]" },
+  { src: bottleJohnnieWalker, alt: "Johnnie Walker Black Label", position: "left-[22%]" },
+  { src: bottleRobertson, alt: "Robertson Winery", position: "left-[42%]" },
+  { src: bottleVersus, alt: "Versus Sweet", position: "right-[22%]" },
+  { src: bottleGilbeys, alt: "Gilbey's Gin", position: "right-[2%]" },
 ];
 
 const Hero = () => {
@@ -26,36 +28,28 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[90vh] flex items-center bg-gradient-hero overflow-hidden">
-      {/* Background bottles */}
-      <div className="absolute inset-0 z-0">
+      {/* Background bottles - clean and clear */}
+      <div className="absolute inset-0 z-0 flex items-end justify-center">
         {bottles.map((bottle, index) => (
           <div
             key={bottle.alt}
             className={`absolute bottom-0 ${bottle.position} transition-all duration-1000 ease-in-out ${
               index === activeBottle 
-                ? "opacity-40 scale-110" 
-                : "opacity-20 scale-100"
+                ? "opacity-70 scale-105" 
+                : "opacity-40 scale-100"
             }`}
           >
             <img
               src={bottle.src}
               alt={bottle.alt}
-              className="h-[60vh] md:h-[75vh] object-contain drop-shadow-[0_0_30px_rgba(197,138,44,0.3)]"
-              style={{
-                filter: "brightness(0.9) contrast(1.1)",
-                mixBlendMode: "luminosity",
-              }}
+              className="h-[50vh] md:h-[65vh] object-contain"
             />
           </div>
         ))}
       </div>
 
-      {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/60 to-primary/80 z-[1]"></div>
-      
-      {/* Animated amber glow effect */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl animate-pulse z-[2]"></div>
-      <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/20 rounded-full blur-3xl z-[2]"></div>
+      {/* Subtle dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/60 via-primary/50 to-primary/70 z-[1]"></div>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
