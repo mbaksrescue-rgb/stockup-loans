@@ -27,8 +27,10 @@ import UserManagement from "./pages/admin/UserManagement";
 import Settings from "./pages/admin/Settings";
 import Customers from "./pages/admin/Customers";
 import DocumentVerification from "./pages/admin/DocumentVerification";
+import Founders from "./pages/admin/Founders";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,7 @@ const App = () => (
               <Route path="payments" element={<Payments />} />
               <Route path="distributors" element={<Distributors />} />
               <Route path="customers" element={<Customers />} />
+              <Route path="founders" element={<Founders />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="risk" element={<RiskCompliance />} />
               <Route path="users" element={<UserManagement />} />
@@ -66,6 +69,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <PWAInstallPrompt />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
