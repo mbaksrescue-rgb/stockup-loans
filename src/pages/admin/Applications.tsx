@@ -250,9 +250,81 @@ const Applications = () => {
     );
   };
 
+  const [batchAnalyzing, setBatchAnalyzing] = useState(false);
+
+  const pendingApplications = applications.filter(app => app.status === 'pending');
+
+  const handleBatchRiskAnalysis = async () => {
+    if (pendingApplications.length === 0) {
+      toast.info('No pending applications to analyze');
+      return;
+    }
+
+    setBatchAnalyzing(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const app of pendingApplications) {
+      try {
+        const { error } = await supabase.functions.invoke('analyze-risk', {
+          body: {
+            applicationId: app.id,
+            documentUrls: {
+              idDocument: null,
+              businessRegistration: null,
+              selfie: null
+            },
+            businessData: {
+              businessName: app.business_name,
+              registrationNumber: app.registration_number,
+              yearsInOperation: app.years_in_operation,
+              physicalAddress: app.physical_address,
+              loanAmount: app.loan_amount,
+              loanPurpose: app.loan_purpose,
+              distributorName: app.distributor_name
+            }
+          }
+        });
+
+        if (error) {
+          errorCount++;
+        } else {
+          successCount++;
+        }
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setBatchAnalyzing(false);
+    fetchApplications();
+
+    if (successCount > 0) {
+      toast.success(`AI analysis completed for ${successCount} applications`, {
+        icon: <Brain className="w-4 h-4" />,
+      });
+    }
+    if (errorCount > 0) {
+      toast.error(`Failed to analyze ${errorCount} applications`);
+    }
+  };
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Loan Applications</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Loan Applications</h1>
+        <Button
+          onClick={handleBatchRiskAnalysis}
+          disabled={batchAnalyzing || pendingApplications.length === 0}
+        >
+          {batchAnalyzing ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Brain className="w-4 h-4 mr-2" />
+          )}
+          Analyze All Pending ({pendingApplications.length})
+        </Button>
+      </div>
       
       <Card>
         <CardHeader>

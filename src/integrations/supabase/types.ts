@@ -246,6 +246,51 @@ export type Database = {
         }
         Relationships: []
       }
+      founders: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_order: number | null
+          email: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          linkedin_url: string | null
+          name: string
+          phone: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name: string
+          phone?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name?: string
+          phone?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kyc_data: {
         Row: {
           analysis_result: Json | null
