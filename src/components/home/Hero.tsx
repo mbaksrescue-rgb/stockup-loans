@@ -1,20 +1,61 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import bottleKenyaCane from "@/assets/bottle-kenya-cane.png";
 import bottleJohnnieWalker from "@/assets/bottle-johnnie-walker.png";
 import bottleCounty from "@/assets/bottle-county.png";
 import bottleGilbeys from "@/assets/bottle-gilbeys.png";
 
+const bottles = [
+  { src: bottleKenyaCane, alt: "Kenya Cane", position: "left-[5%]" },
+  { src: bottleJohnnieWalker, alt: "Johnnie Walker", position: "left-[25%]" },
+  { src: bottleCounty, alt: "County", position: "right-[25%]" },
+  { src: bottleGilbeys, alt: "Gilbey's Gin", position: "right-[5%]" },
+];
+
 const Hero = () => {
+  const [activeBottle, setActiveBottle] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveBottle((prev) => (prev + 1) % bottles.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="relative min-h-[90vh] flex items-center bg-gradient-hero overflow-hidden">
-      {/* Subtle gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent"></div>
+      {/* Background bottles */}
+      <div className="absolute inset-0 z-0">
+        {bottles.map((bottle, index) => (
+          <div
+            key={bottle.alt}
+            className={`absolute bottom-0 ${bottle.position} transition-all duration-1000 ease-in-out ${
+              index === activeBottle 
+                ? "opacity-40 scale-110" 
+                : "opacity-20 scale-100"
+            }`}
+          >
+            <img
+              src={bottle.src}
+              alt={bottle.alt}
+              className="h-[60vh] md:h-[75vh] object-contain drop-shadow-[0_0_30px_rgba(197,138,44,0.3)]"
+              style={{
+                filter: "brightness(0.9) contrast(1.1)",
+                mixBlendMode: "luminosity",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/60 to-primary/80 z-[1]"></div>
       
       {/* Animated amber glow effect */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl animate-pulse z-[2]"></div>
+      <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/20 rounded-full blur-3xl z-[2]"></div>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
@@ -68,42 +109,6 @@ const Hero = () => {
               <div className="text-xs md:text-sm text-primary-foreground/80">Turnaround</div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Bottles Display Section */}
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        {/* Table surface */}
-        <div className="relative h-4 bg-gradient-to-r from-amber-900/80 via-amber-800/90 to-amber-900/80 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-          <div className="absolute inset-0 bg-gradient-to-b from-amber-700/20 to-transparent"></div>
-        </div>
-        
-        {/* Bottles container */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center items-end gap-2 sm:gap-4 md:gap-8 px-4">
-          <img 
-            src={bottleKenyaCane} 
-            alt="Kenya Cane" 
-            className="h-32 sm:h-40 md:h-52 lg:h-64 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
-            style={{ animationDelay: '0.2s' }}
-          />
-          <img 
-            src={bottleJohnnieWalker} 
-            alt="Johnnie Walker" 
-            className="h-36 sm:h-44 md:h-56 lg:h-72 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
-            style={{ animationDelay: '0.4s' }}
-          />
-          <img 
-            src={bottleCounty} 
-            alt="County" 
-            className="h-32 sm:h-40 md:h-52 lg:h-64 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
-            style={{ animationDelay: '0.6s' }}
-          />
-          <img 
-            src={bottleGilbeys} 
-            alt="Gilbey's Gin" 
-            className="h-34 sm:h-42 md:h-54 lg:h-68 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
-            style={{ animationDelay: '0.8s' }}
-          />
         </div>
       </div>
     </section>
