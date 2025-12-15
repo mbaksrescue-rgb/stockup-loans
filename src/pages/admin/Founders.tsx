@@ -343,8 +343,11 @@ const Founders = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, image_url: e.target.value })
                 }
-                placeholder="https://example.com/photo.jpg"
+                placeholder="https://example.com/photo.jpg or /assets/filename.jpg"
               />
+              <p className="text-xs text-muted-foreground">
+                Use local paths like /assets/omar-laisa.png for bundled images, or external URLs
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

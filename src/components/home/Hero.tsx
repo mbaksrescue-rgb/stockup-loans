@@ -5,7 +5,34 @@ import { ArrowRight } from "lucide-react";
 const Hero = () => {
   return (
     <section className="relative min-h-[90vh] flex items-center bg-gradient-hero overflow-hidden">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30"></div>
+      {/* Liquor bottle silhouettes background */}
+      <div className="absolute inset-0 opacity-10">
+        <svg className="absolute bottom-0 left-0 w-full h-2/3" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice">
+          {/* Whiskey bottle */}
+          <path d="M100 600 L100 400 L90 380 L90 340 L110 340 L110 380 L100 400 L120 400 L120 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Wine bottle */}
+          <path d="M250 600 L250 350 L240 320 L240 280 L260 280 L260 320 L250 350 L270 350 L270 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Vodka bottle */}
+          <path d="M400 600 L400 380 L395 360 L395 320 L425 320 L425 360 L420 380 L420 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Cognac bottle */}
+          <path d="M550 600 L540 450 L530 420 L530 380 L570 380 L570 420 L560 450 L570 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Gin bottle */}
+          <path d="M700 600 L700 400 L690 370 L690 330 L730 330 L730 370 L720 400 L720 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Rum bottle */}
+          <path d="M850 600 L850 420 L840 390 L840 350 L880 350 L880 390 L870 420 L870 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Tequila bottle */}
+          <path d="M1000 600 L1000 380 L990 350 L990 300 L1030 300 L1030 350 L1020 380 L1020 600 Z" fill="currentColor" className="text-primary-foreground" />
+          {/* Brandy bottle */}
+          <path d="M1120 600 L1110 440 L1100 400 L1100 360 L1140 360 L1140 400 L1130 440 L1140 600 Z" fill="currentColor" className="text-primary-foreground" />
+        </svg>
+      </div>
+      
+      {/* Subtle gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent"></div>
+      
+      {/* Animated amber glow effect */}
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
