@@ -31,6 +31,7 @@ import Founders from "./pages/admin/Founders";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import VisitorTracker from "./components/VisitorTracker";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <PWAInstallPrompt />
+          <VisitorTracker />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

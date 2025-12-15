@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, DollarSign, Users, TrendingUp, CheckCircle, Building2, Calendar, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileText, DollarSign, Users, TrendingUp, CheckCircle, Building2, Calendar, Loader2, Eye, Bell, Wifi } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subDays, startOfDay } from 'date-fns';
+import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,13 +21,16 @@ const Dashboard = () => {
     outstandingBalance: 0,
     upcomingPayments: 0,
   });
+  const [visitorStats, setVisitorStats] = useState({
+    todayViews: 0,
+    todayVisitors: 0,
+    weekViews: 0,
+    weekVisitors: 0,
+  });
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [recentApplications, setRecentApplications] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const [applications, disbursements, customers, allDisbursements] = await Promise.all([
         supabase.from('loan_applications').select('*', { count: 'exact', head: true }),
@@ -77,12 +82,54 @@ const Dashboard = () => {
         .limit(5);
 
       setRecentTransactions(recent || []);
+
+      // Fetch recent applications for realtime display
+      const { data: recentApps } = await supabase
+        .from('loan_applications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setRecentApplications(recentApps || []);
+
+      // Fetch visitor stats
+      const todayStart = startOfDay(new Date()).toISOString();
+      const weekStart = startOfDay(subDays(new Date(), 7)).toISOString();
+
+      const [todayViews, weekViews] = await Promise.all([
+        supabase
+          .from('page_views')
+          .select('visitor_id')
+          .gte('created_at', todayStart),
+        supabase
+          .from('page_views')
+          .select('visitor_id')
+          .gte('created_at', weekStart),
+      ]);
+
+      const todayUniqueVisitors = new Set(todayViews.data?.map(v => v.visitor_id) || []);
+      const weekUniqueVisitors = new Set(weekViews.data?.map(v => v.visitor_id) || []);
+
+      setVisitorStats({
+        todayViews: todayViews.data?.length || 0,
+        todayVisitors: todayUniqueVisitors.size,
+        weekViews: weekViews.data?.length || 0,
+        weekVisitors: weekUniqueVisitors.size,
+      });
+
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Use realtime hook for live updates
+  useRealtimeApplications(fetchStats);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const statCards = [
     {
@@ -98,6 +145,7 @@ const Dashboard = () => {
       icon: TrendingUp,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
+      live: true,
     },
     {
       title: 'Active Disbursements',
@@ -112,6 +160,37 @@ const Dashboard = () => {
       icon: Users,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
+    },
+  ];
+
+  const visitorCards = [
+    {
+      title: 'Today\'s Views',
+      value: visitorStats.todayViews,
+      icon: Eye,
+      color: 'text-cyan-600',
+      bg: 'bg-cyan-50',
+    },
+    {
+      title: 'Today\'s Visitors',
+      value: visitorStats.todayVisitors,
+      icon: Users,
+      color: 'text-teal-600',
+      bg: 'bg-teal-50',
+    },
+    {
+      title: 'Week Views',
+      value: visitorStats.weekViews,
+      icon: Eye,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-50',
+    },
+    {
+      title: 'Week Visitors',
+      value: visitorStats.weekVisitors,
+      icon: Users,
+      color: 'text-pink-600',
+      bg: 'bg-pink-50',
     },
   ];
 
@@ -180,9 +259,41 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Platform overview and key metrics</p>
+        </div>
+        <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
+          <Wifi className="w-3 h-3 text-green-500 animate-pulse" />
+          Live Updates
+        </Badge>
+      </div>
+
+      {/* Visitor Stats */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Platform overview and key metrics</p>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Eye className="w-5 h-5" />
+          Visitor Analytics
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {visitorCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.title}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <div className={`p-2 rounded-lg ${stat.bg}`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
       {/* Application Stats */}
@@ -192,9 +303,16 @@ const Dashboard = () => {
           {statCards.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.title}>
+              <Card key={stat.title} className={stat.live ? 'ring-2 ring-green-500/20' : ''}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {stat.title}
+                    {stat.live && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      </span>
+                    )}
+                  </CardTitle>
                   <div className={`p-2 rounded-lg ${stat.bg}`}>
                     <Icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
@@ -229,6 +347,62 @@ const Dashboard = () => {
             );
           })}
         </div>
+      </div>
+
+      {/* Recent Applications - Live Feed */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Recent Applications
+            <Badge variant="secondary" className="ml-2">Live</Badge>
+          </h2>
+          <Button variant="outline" onClick={() => navigate('/admin/applications')}>
+            View All
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            {recentApplications.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No applications yet</p>
+            ) : (
+              <div className="space-y-4">
+                {recentApplications.map((app) => (
+                  <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-lg ${
+                        app.status === 'approved' ? 'bg-green-50' : 
+                        app.status === 'pending' ? 'bg-orange-50' : 
+                        app.status === 'rejected' ? 'bg-red-50' : 'bg-gray-50'
+                      }`}>
+                        <FileText className={`h-5 w-5 ${
+                          app.status === 'approved' ? 'text-green-600' : 
+                          app.status === 'pending' ? 'text-orange-600' : 
+                          app.status === 'rejected' ? 'text-red-600' : 'text-gray-600'
+                        }`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{app.business_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {app.owner_name} • {formatDistanceToNow(new Date(app.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">KES {Number(app.loan_amount).toLocaleString()}</p>
+                      <Badge variant={
+                        app.status === 'approved' ? 'default' : 
+                        app.status === 'pending' ? 'outline' : 'destructive'
+                      }>
+                        {app.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
