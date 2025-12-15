@@ -1,32 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import bottleKenyaCane from "@/assets/bottle-kenya-cane.png";
+import bottleJohnnieWalker from "@/assets/bottle-johnnie-walker.png";
+import bottleCounty from "@/assets/bottle-county.png";
+import bottleGilbeys from "@/assets/bottle-gilbeys.png";
 
 const Hero = () => {
   return (
     <section className="relative min-h-[90vh] flex items-center bg-gradient-hero overflow-hidden">
-      {/* Liquor bottle silhouettes background */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="absolute bottom-0 left-0 w-full h-2/3" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice">
-          {/* Whiskey bottle */}
-          <path d="M100 600 L100 400 L90 380 L90 340 L110 340 L110 380 L100 400 L120 400 L120 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Wine bottle */}
-          <path d="M250 600 L250 350 L240 320 L240 280 L260 280 L260 320 L250 350 L270 350 L270 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Vodka bottle */}
-          <path d="M400 600 L400 380 L395 360 L395 320 L425 320 L425 360 L420 380 L420 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Cognac bottle */}
-          <path d="M550 600 L540 450 L530 420 L530 380 L570 380 L570 420 L560 450 L570 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Gin bottle */}
-          <path d="M700 600 L700 400 L690 370 L690 330 L730 330 L730 370 L720 400 L720 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Rum bottle */}
-          <path d="M850 600 L850 420 L840 390 L840 350 L880 350 L880 390 L870 420 L870 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Tequila bottle */}
-          <path d="M1000 600 L1000 380 L990 350 L990 300 L1030 300 L1030 350 L1020 380 L1020 600 Z" fill="currentColor" className="text-primary-foreground" />
-          {/* Brandy bottle */}
-          <path d="M1120 600 L1110 440 L1100 400 L1100 360 L1140 360 L1140 400 L1130 440 L1140 600 Z" fill="currentColor" className="text-primary-foreground" />
-        </svg>
-      </div>
-      
       {/* Subtle gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent"></div>
       
@@ -86,6 +68,42 @@ const Hero = () => {
               <div className="text-xs md:text-sm text-primary-foreground/80">Turnaround</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bottles Display Section */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        {/* Table surface */}
+        <div className="relative h-4 bg-gradient-to-r from-amber-900/80 via-amber-800/90 to-amber-900/80 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+          <div className="absolute inset-0 bg-gradient-to-b from-amber-700/20 to-transparent"></div>
+        </div>
+        
+        {/* Bottles container */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center items-end gap-2 sm:gap-4 md:gap-8 px-4">
+          <img 
+            src={bottleKenyaCane} 
+            alt="Kenya Cane" 
+            className="h-32 sm:h-40 md:h-52 lg:h-64 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
+            style={{ animationDelay: '0.2s' }}
+          />
+          <img 
+            src={bottleJohnnieWalker} 
+            alt="Johnnie Walker" 
+            className="h-36 sm:h-44 md:h-56 lg:h-72 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
+            style={{ animationDelay: '0.4s' }}
+          />
+          <img 
+            src={bottleCounty} 
+            alt="County" 
+            className="h-32 sm:h-40 md:h-52 lg:h-64 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
+            style={{ animationDelay: '0.6s' }}
+          />
+          <img 
+            src={bottleGilbeys} 
+            alt="Gilbey's Gin" 
+            className="h-34 sm:h-42 md:h-54 lg:h-68 object-contain opacity-0 animate-drop-in drop-shadow-2xl"
+            style={{ animationDelay: '0.8s' }}
+          />
         </div>
       </div>
     </section>

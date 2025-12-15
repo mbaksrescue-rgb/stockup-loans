@@ -92,10 +92,28 @@ export default {
             height: "0",
           },
         },
+        "drop-in": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(-100px) scale(0.8)",
+          },
+          "60%": {
+            opacity: "1",
+            transform: "translateY(10px) scale(1.02)",
+          },
+          "80%": {
+            transform: "translateY(-5px) scale(0.98)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "drop-in": "drop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
       },
     },
   },
