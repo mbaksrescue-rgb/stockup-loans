@@ -1,13 +1,19 @@
 {
-  "name": "Stock 24/7 by Zion Link Technologies - Growing With You",
-  "short_name": "Stock 24/7",
-  "description": "Get instant loans for your liquor business. KSh 5,000-300,000, 10% flat interest, funds disbursed in under 24 hours.",
+  "name": "Zion Links - Fast Business Loans for Liquor Retailers",
+  "short_name": "Zion Links",
+  "description": "Get instant loans for your liquor business in Kenya. KES 5,000-300,000, 10% flat interest, funds disbursed in under 24 hours.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e3a5f",
-  "theme_color": "#1e3a5f",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -22,12 +28,6 @@
     }
   ],
   "categories": ["finance", "business"],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    }
-  ]
+  "lang": "en-KE",
+  "dir": "ltr"
 }
