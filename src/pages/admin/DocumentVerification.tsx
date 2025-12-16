@@ -32,7 +32,12 @@ import {
   FileImage,
   User,
   Building2,
-  Camera
+  Camera,
+  ZoomIn,
+  ZoomOut,
+  Download,
+  X,
+  Loader2
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -65,11 +70,13 @@ interface ApplicationWithDocs {
 const DocumentVerification = () => {
   const [applications, setApplications] = useState<ApplicationWithDocs[]>([]);
   const [selectedApp, setSelectedApp] = useState<ApplicationWithDocs | null>(null);
-  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{ url: string; title: string } | null>(null);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'verified'>('all');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [loadingDocument, setLoadingDocument] = useState(false);
 
   useEffect(() => {
     fetchApplicationsWithDocuments();
@@ -109,27 +116,91 @@ const DocumentVerification = () => {
     setLoading(false);
   };
 
-  const getDocumentUrl = async (path: string | null): Promise<string | null> => {
+  const getSignedUrl = async (path: string | null): Promise<string | null> => {
     if (!path) return null;
     
-    const { data } = await supabase.storage
-      .from('kyc-documents')
-      .createSignedUrl(path, 3600); // 1 hour expiry
-    
-    return data?.signedUrl || null;
+    try {
+      // Check if it's already a full URL
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        // Extract the file path from the full URL if needed
+        if (path.includes('/kyc-documents/')) {
+          const pathParts = path.split('/kyc-documents/');
+          if (pathParts.length > 1) {
+            const filePath = pathParts[1].split('?')[0]; // Remove any query params
+            const { data, error } = await supabase.storage
+              .from('kyc-documents')
+              .createSignedUrl(filePath, 3600);
+            
+            if (error) {
+              console.error('Error creating signed URL:', error);
+              return path; // Return original URL as fallback
+            }
+            return data?.signedUrl || path;
+          }
+        }
+        return path;
+      }
+      
+      // It's a relative path, create signed URL
+      const { data, error } = await supabase.storage
+        .from('kyc-documents')
+        .createSignedUrl(path, 3600); // 1 hour expiry
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Error in getSignedUrl:', error);
+      return path; // Return original as fallback
+    }
   };
 
-  const handleViewDocument = async (url: string | null) => {
+  const handleViewDocument = async (url: string | null, title: string) => {
     if (!url) {
       toast.error('Document not available');
       return;
     }
 
-    const signedUrl = await getDocumentUrl(url);
-    if (signedUrl) {
-      setSelectedDocument(signedUrl);
-    } else {
-      toast.error('Failed to load document');
+    setLoadingDocument(true);
+    setZoomLevel(1);
+    
+    try {
+      const signedUrl = await getSignedUrl(url);
+      if (signedUrl) {
+        setSelectedDocument({ url: signedUrl, title });
+      } else {
+        // Try original URL as fallback
+        setSelectedDocument({ url, title });
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+      // Try original URL as fallback
+      setSelectedDocument({ url, title });
+    } finally {
+      setLoadingDocument(false);
+    }
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!selectedDocument) return;
+    
+    try {
+      const response = await fetch(selectedDocument.url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${selectedDocument.title.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+      toast.success('Document downloaded');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast.error('Failed to download document');
     }
   };
 
@@ -359,7 +430,8 @@ const DocumentVerification = () => {
               {/* Documents Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* ID Document */}
-                <Card className={selectedApp.id_document_url ? '' : 'opacity-50'}>
+                <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedApp.id_document_url ? 'hover:border-primary' : 'opacity-50'}`}
+                      onClick={() => selectedApp.id_document_url && handleViewDocument(selectedApp.id_document_url, 'ID Document')}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <User className="w-4 h-4" />
@@ -368,14 +440,10 @@ const DocumentVerification = () => {
                   </CardHeader>
                   <CardContent>
                     {selectedApp.id_document_url ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleViewDocument(selectedApp.id_document_url)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Document
-                      </Button>
+                      <div className="flex items-center gap-2 text-primary">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-sm">Click to View</span>
+                      </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-2">Not uploaded</p>
                     )}
@@ -383,7 +451,8 @@ const DocumentVerification = () => {
                 </Card>
 
                 {/* Business Registration */}
-                <Card className={selectedApp.business_registration_url ? '' : 'opacity-50'}>
+                <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedApp.business_registration_url ? 'hover:border-primary' : 'opacity-50'}`}
+                      onClick={() => selectedApp.business_registration_url && handleViewDocument(selectedApp.business_registration_url, 'Business Registration')}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Building2 className="w-4 h-4" />
@@ -392,14 +461,10 @@ const DocumentVerification = () => {
                   </CardHeader>
                   <CardContent>
                     {selectedApp.business_registration_url ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleViewDocument(selectedApp.business_registration_url)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Document
-                      </Button>
+                      <div className="flex items-center gap-2 text-primary">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-sm">Click to View</span>
+                      </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-2">Not uploaded</p>
                     )}
@@ -407,7 +472,8 @@ const DocumentVerification = () => {
                 </Card>
 
                 {/* Selfie */}
-                <Card className={selectedApp.selfie_url ? '' : 'opacity-50'}>
+                <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedApp.selfie_url ? 'hover:border-primary' : 'opacity-50'}`}
+                      onClick={() => selectedApp.selfie_url && handleViewDocument(selectedApp.selfie_url, 'Selfie Verification')}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Camera className="w-4 h-4" />
@@ -416,14 +482,10 @@ const DocumentVerification = () => {
                   </CardHeader>
                   <CardContent>
                     {selectedApp.selfie_url ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleViewDocument(selectedApp.selfie_url)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Photo
-                      </Button>
+                      <div className="flex items-center gap-2 text-primary">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-sm">Click to View</span>
+                      </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-2">Not uploaded</p>
                     )}
@@ -442,7 +504,8 @@ const DocumentVerification = () => {
                       {selectedApp.kyc_documents.map((doc) => (
                         <div
                           key={doc.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
+                          className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => handleViewDocument(doc.document_url, doc.document_type.replace(/_/g, ' '))}
                         >
                           <div className="flex items-center gap-3">
                             {getDocumentIcon(doc.document_type)}
@@ -461,13 +524,7 @@ const DocumentVerification = () => {
                                 Risk: {doc.risk_score}
                               </Badge>
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewDocument(doc.document_url)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                            <Eye className="w-4 h-4 text-primary" />
                           </div>
                         </div>
                       ))}
@@ -478,33 +535,45 @@ const DocumentVerification = () => {
 
               {/* Verification Notes */}
               <div className="space-y-2">
-                <Label>Verification Notes (Optional)</Label>
+                <Label>Verification Notes</Label>
                 <Textarea
-                  placeholder="Add any notes about the document verification..."
+                  placeholder="Add notes about the verification (optional)"
                   value={verificationNotes}
                   onChange={(e) => setVerificationNotes(e.target.value)}
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  className="flex-1"
-                  onClick={() => handleVerifyDocuments(selectedApp.id, true)}
-                  disabled={verifying}
-                >
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Verify Documents
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={() => handleVerifyDocuments(selectedApp.id, false)}
-                  disabled={verifying}
-                >
-                  <FileX className="w-4 h-4 mr-2" />
-                  Mark Unverified
-                </Button>
+              <div className="flex gap-3 justify-end">
+                {selectedApp.documents_verified ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleVerifyDocuments(selectedApp.id, false)}
+                    disabled={verifying}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Unverify Documents
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleVerifyDocuments(selectedApp.id, false)}
+                      disabled={verifying}
+                    >
+                      <FileX className="w-4 h-4 mr-2" />
+                      Reject
+                    </Button>
+                    <Button
+                      onClick={() => handleVerifyDocuments(selectedApp.id, true)}
+                      disabled={verifying}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Verify Documents
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -513,23 +582,68 @@ const DocumentVerification = () => {
 
       {/* Document Viewer Dialog */}
       <Dialog open={!!selectedDocument} onOpenChange={() => setSelectedDocument(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Document Viewer</DialogTitle>
-          </DialogHeader>
-          {selectedDocument && (
-            <div className="flex items-center justify-center bg-muted rounded-lg p-4 min-h-[400px]">
-              <img
-                src={selectedDocument}
-                alt="Document"
-                className="max-w-full max-h-[70vh] object-contain rounded"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  toast.error('Failed to load document image');
-                }}
-              />
+        <DialogContent className="max-w-5xl max-h-[95vh] p-0 bg-black/95">
+          <div className="relative w-full h-full min-h-[600px]">
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+              <h3 className="text-white font-medium">{selectedDocument?.title}</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                <span className="text-white text-sm min-w-[50px] text-center">{Math.round(zoomLevel * 100)}%</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))}
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/20"
+                  onClick={handleDownloadDocument}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => setSelectedDocument(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          )}
+
+            {/* Document Content */}
+            <div className="w-full h-[80vh] overflow-auto flex items-center justify-center p-8 pt-16">
+              {loadingDocument ? (
+                <Loader2 className="w-8 h-8 animate-spin text-white" />
+              ) : selectedDocument ? (
+                <img
+                  src={selectedDocument.url}
+                  alt={selectedDocument.title}
+                  className="max-w-full max-h-full object-contain transition-transform duration-200"
+                  style={{ transform: `scale(${zoomLevel})` }}
+                  onError={(e) => {
+                    console.error('Image failed to load:', selectedDocument.url);
+                    toast.error('Failed to load image');
+                  }}
+                />
+              ) : (
+                <p className="text-white">No document selected</p>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
