@@ -2,3 +2,12 @@ project_id = "wcoqwxdjzfjweqqjnnii"
 
 [functions.analyze-risk]
 verify_jwt = true
+
+[functions.send-sms]
+verify_jwt = true
+
+[functions.initiate-repayment]
+verify_jwt = true
+
+[functions.mpesa-callback]
+verify_jwt = false
