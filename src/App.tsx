@@ -15,11 +15,13 @@ import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import AdminLayout from "./components/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
+import AdminDashboard from "./pages/admin/Dashboard";
 import Applications from "./pages/admin/Applications";
 import Payments from "./pages/admin/Payments";
 import Disbursements from "./pages/admin/Disbursements";
+import AdminRepayments from "./pages/admin/Repayments";
 import Distributors from "./pages/admin/Distributors";
 import Analytics from "./pages/admin/Analytics";
 import RiskCompliance from "./pages/admin/RiskCompliance";
@@ -45,6 +47,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/market" element={<Market />} />
             <Route path="/apply" element={<ProtectedRoute><Apply /></ProtectedRoute>} />
@@ -55,10 +58,11 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
+              <Route index element={<AdminDashboard />} />
               <Route path="applications" element={<Applications />} />
               <Route path="documents" element={<DocumentVerification />} />
               <Route path="disbursements" element={<Disbursements />} />
+              <Route path="repayments" element={<AdminRepayments />} />
               <Route path="payments" element={<Payments />} />
               <Route path="distributors" element={<Distributors />} />
               <Route path="customers" element={<Customers />} />

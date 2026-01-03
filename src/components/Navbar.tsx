@@ -50,6 +50,7 @@ const Navbar = () => {
             ))}
             {user ? (
               <>
+                <Link to="/dashboard"><Button variant="ghost" size="sm" className="text-primary-foreground hover:text-accent">My Dashboard</Button></Link>
                 {isAdmin && <Link to="/admin"><Button variant="outline" size="sm">Admin</Button></Link>}
                 <Link to="/apply"><Button variant="hero" size="sm">Apply Now</Button></Link>
                 <Button variant="outline" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
@@ -89,9 +90,23 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {user && (
+              <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full mb-2">My Dashboard</Button>
+              </Link>
+            )}
             <Link to="/apply" onClick={() => setIsOpen(false)}>
               <Button variant="hero" size="sm" className="w-full">Apply Now</Button>
             </Link>
+            {user ? (
+              <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => { signOut(); setIsOpen(false); }}>
+                <LogOut className="h-4 w-4 mr-2" /> Sign Out
+              </Button>
+            ) : (
+              <Link to="/auth" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full mt-2">Sign In</Button>
+              </Link>
+            )}
           </div>
         )}
       </div>

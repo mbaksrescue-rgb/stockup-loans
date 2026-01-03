@@ -464,6 +464,56 @@ export type Database = {
         }
         Relationships: []
       }
+      repayments: {
+        Row: {
+          amount: number
+          checkout_request_id: string | null
+          created_at: string
+          id: string
+          loan_id: string
+          merchant_request_id: string | null
+          mpesa_receipt: string | null
+          paid_at: string | null
+          phone: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          checkout_request_id?: string | null
+          created_at?: string
+          id?: string
+          loan_id: string
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          paid_at?: string | null
+          phone: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          checkout_request_id?: string | null
+          created_at?: string
+          id?: string
+          loan_id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          paid_at?: string | null
+          phone?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repayments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       risk_assessments: {
         Row: {
           aml_status: string | null

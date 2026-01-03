@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-type NotificationType = 'approved' | 'rejected' | 'pending' | 'disbursed' | 'custom';
+type NotificationType = 'approved' | 'rejected' | 'pending' | 'disbursed' | 'payment_received' | 'payment_failed' | 'loan_completed' | 'custom';
 
 interface SendSmsParams {
   phone: string;
@@ -17,10 +17,12 @@ interface SmsResponse {
 }
 
 export const getStatusMessage = (
-  status: 'approved' | 'rejected' | 'disbursed',
+  status: 'approved' | 'rejected' | 'disbursed' | 'payment_received' | 'payment_failed' | 'loan_completed',
   businessName: string,
   loanAmount?: number,
-  rejectionReason?: string
+  rejectionReason?: string,
+  mpesaReceipt?: string,
+  outstanding?: number
 ): string => {
   const formattedAmount = loanAmount?.toLocaleString() || '';
 
@@ -33,6 +35,15 @@ export const getStatusMessage = (
     
     case 'disbursed':
       return `Great news! KSh ${formattedAmount} has been disbursed to your distributor for ${businessName}. Please check with your distributor to confirm receipt. Thank you! - Zion Link Technologies`;
+    
+    case 'payment_received':
+      return `Payment of KSh ${formattedAmount} received. Receipt: ${mpesaReceipt}. Outstanding: KSh ${outstanding?.toLocaleString() || '0'}. Thank you! - Zion Link Technologies`;
+    
+    case 'payment_failed':
+      return `Payment failed. Please try again or contact support. - Zion Link Technologies`;
+    
+    case 'loan_completed':
+      return `Your loan is fully repaid! Receipt: ${mpesaReceipt}. Thank you for banking with Zion Links.`;
     
     default:
       return '';
@@ -67,13 +78,15 @@ export const sendSms = async (params: SendSmsParams): Promise<SmsResponse> => {
 
 export const sendStatusNotification = async (
   phone: string,
-  status: 'approved' | 'rejected' | 'disbursed',
+  status: 'approved' | 'rejected' | 'disbursed' | 'payment_received' | 'payment_failed' | 'loan_completed',
   businessName: string,
   applicationId: string,
   loanAmount?: number,
-  rejectionReason?: string
+  rejectionReason?: string,
+  mpesaReceipt?: string,
+  outstanding?: number
 ): Promise<SmsResponse> => {
-  const message = getStatusMessage(status, businessName, loanAmount, rejectionReason);
+  const message = getStatusMessage(status, businessName, loanAmount, rejectionReason, mpesaReceipt, outstanding);
   
   return sendSms({
     phone,

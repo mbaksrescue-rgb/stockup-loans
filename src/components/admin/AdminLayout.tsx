@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, DollarSign, Users, LogOut, Building2, BarChart3, Shield, Settings, UserCog, Banknote, FileCheck, UserCheck } from 'lucide-react';
+import { LayoutDashboard, FileText, DollarSign, Users, LogOut, Building2, BarChart3, Shield, Settings, UserCog, Banknote, FileCheck, UserCheck, Receipt } from 'lucide-react';
 import logo from '@/assets/zion-link-logo.jpg';
 
 const AdminLayout = () => {
@@ -13,6 +13,7 @@ const AdminLayout = () => {
     { path: '/admin/applications', icon: FileText, label: 'Applications' },
     { path: '/admin/documents', icon: FileCheck, label: 'Document Verification' },
     { path: '/admin/disbursements', icon: Banknote, label: 'Disbursements' },
+    { path: '/admin/repayments', icon: Receipt, label: 'Repayments' },
     { path: '/admin/payments', icon: DollarSign, label: 'Payments' },
     { path: '/admin/distributors', icon: Building2, label: 'Distributors' },
     { path: '/admin/customers', icon: Users, label: 'Customers' },
