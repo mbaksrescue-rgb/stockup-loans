@@ -8,6 +8,12 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Market from "./pages/Market";
+import DistributorDeals from "./pages/market/DistributorDeals";
+import BusinessTools from "./pages/market/BusinessTools";
+import InsuranceCover from "./pages/market/InsuranceCover";
+import GrowthLoans from "./pages/market/GrowthLoans";
+import PartnerNetwork from "./pages/market/PartnerNetwork";
+import PremiumServices from "./pages/market/PremiumServices";
 import Apply from "./pages/Apply";
 import Disbursement from "./pages/Disbursement";
 import FAQs from "./pages/FAQs";
@@ -50,6 +56,12 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/market" element={<Market />} />
+            <Route path="/market/distributors" element={<DistributorDeals />} />
+            <Route path="/market/tools" element={<BusinessTools />} />
+            <Route path="/market/insurance" element={<InsuranceCover />} />
+            <Route path="/market/loans" element={<GrowthLoans />} />
+            <Route path="/market/partners" element={<PartnerNetwork />} />
+            <Route path="/market/premium" element={<PremiumServices />} />
             <Route path="/apply" element={<ProtectedRoute><Apply /></ProtectedRoute>} />
             <Route path="/disbursement" element={<ProtectedRoute><Disbursement /></ProtectedRoute>} />
             <Route path="/faqs" element={<FAQs />} />

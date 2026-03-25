@@ -1,23 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4AF37;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#C5A72C;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#B8962E;stop-opacity:1" />
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C5A72C"/>
+      <stop offset="100%" style="stop-color:#D4AF37"/>
     </linearGradient>
-    <linearGradient id="darkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0f0f1a;stop-opacity:1" />
+    <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f1f1f"/>
+      <stop offset="100%" style="stop-color:#0d2818"/>
     </linearGradient>
   </defs>
-  
-  <!-- Background circle -->
-  <circle cx="32" cy="32" r="30" fill="url(#darkGradient)" stroke="url(#goldGradient)" stroke-width="2"/>
-  
-  <!-- Z Letter stylized -->
-  <path d="M18 18 L46 18 L46 24 L28 40 L46 40 L46 46 L18 46 L18 40 L36 24 L18 24 Z" fill="url(#goldGradient)"/>
-  
-  <!-- Link dots -->
-  <circle cx="50" cy="14" r="3" fill="url(#goldGradient)" opacity="0.8"/>
-  <circle cx="14" cy="50" r="3" fill="url(#goldGradient)" opacity="0.8"/>
+  <rect rx="14" width="64" height="64" fill="url(#g2)"/>
+  <text x="10" y="44" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="32" fill="url(#g1)">ZL</text>
+  <rect x="10" y="48" width="44" height="3" rx="1.5" fill="url(#g1)" opacity="0.7"/>
 </svg>
