@@ -109,5 +109,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Optimize touch targets for mobile */
+@media (max-width: 767px) {
+  button, a, [role="button"] {
+    min-height: 44px;
   }
 }
